@@ -1,6 +1,6 @@
-from corpus import Corpus
-from trainingcorpus import TrainingCorpus
-from utils import get_usage_frequencies
+from filter.corpus import Corpus
+from filter.trainingcorpus import TrainingCorpus
+from filter.utils import get_usage_frequencies
 from math import log
 
 ALPHA = 1

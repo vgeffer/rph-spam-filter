@@ -1,11 +1,11 @@
-from confmat import BinaryConfusionMatrix
 from filter.utils import read_classification_from_file
+from confmat import BinaryConfusionMatrix
+from time import time, process_time
 from filter.filter import MyFilter
 from shutil import copyfile
 from os import mkdir, stat
 from random import sample
 from os.path import join
-from time import time
 from math import ceil
 
 
@@ -19,7 +19,10 @@ def compute_quality_for_corpus(corpus_dir):
     preds = read_classification_from_file(join(corpus_dir, "!prediction.txt"))
     bcm.compute_from_dicts(truth_dict=truths, pred_dict=preds)
 
-    return quality_score(bcm.TP, bcm.TN, bcm.FP, bcm.FN)
+    print("FP:", bcm.FP / (bcm.TP + bcm.TN + bcm.FP + bcm.FN), "- TP:", bcm.TP / (bcm.TP + bcm.TN + bcm.FP + bcm.FN))
+    print("FN:", bcm.FN / (bcm.TP + bcm.TN + bcm.FP + bcm.FN), "- TN:", bcm.TN / (bcm.TP + bcm.TN + bcm.FP + bcm.FN))
+
+    return (quality_score(bcm.TP, bcm.TN, bcm.FP, bcm.FN), bcm.as_dict())
 
 
 if __name__ == '__main__':
@@ -28,6 +31,13 @@ if __name__ == '__main__':
     itters = int(input("How many itterations you wish to do? (0 < n): "))
 
     avg_quality = 0
+    avg_train = 0
+    avg_test = 0
+
+    avg_tp = 0
+    avg_fp = 0
+    avg_tn = 0
+    avg_fn = 0
 
     try:
         stat(dataset_dir)
@@ -88,12 +98,30 @@ if __name__ == '__main__':
         filter = MyFilter()
 
         print("(" + str(i + 1) + "/" + str(itters) + ")", "Staritng training")
+    
+        start = process_time()
         filter.train(join(tmp_dirpath, "train"))
-        print("Training done, starting verification")
+        train = process_time()
+    
+        print("Training done, starting verification, elapsed:", (train - start), "seconds")
         filter.test(join(tmp_dirpath, "verify"))
+        end = process_time()
 
         quality = compute_quality_for_corpus(join(tmp_dirpath, "verify"))
-        avg_quality += quality
-        # Print out quality
-        print("Final quality is: ", quality)
-    print("All done! Average quality is", str(avg_quality / itters))
+        print("Final quality is:", quality[0], "Time elapsed classifiyng:", (end - train), "seconds")
+
+        avg_quality += quality[0]
+        avg_train += (train - start)
+        avg_test += (end - train)
+
+        avg_tp += (quality[1]["tp"] / (quality[1]["tp"] + quality[1]["fp"] + quality[1]["tn"] + quality[1]["fn"]))
+        avg_fp += (quality[1]["fp"] / (quality[1]["tp"] + quality[1]["fp"] + quality[1]["tn"] + quality[1]["fn"]))
+        avg_tn += (quality[1]["tn"] / (quality[1]["tp"] + quality[1]["fp"] + quality[1]["tn"] + quality[1]["fn"]))
+        avg_fn += (quality[1]["fn"] / (quality[1]["tp"] + quality[1]["fp"] + quality[1]["tn"] + quality[1]["fn"]))
+
+    print()
+    print("All done! Average quality of", itters, "itterations is", str(avg_quality / itters))
+    print(" FP:", str(avg_fp / itters), "- TP:", str(avg_tp / itters))
+    print(" FN:", str(avg_fn / itters), "- TN:", str(avg_tn / itters))
+    print("Average training time for dataset:", str(avg_train / itters))
+    print("Average classification time for dataset:", str(avg_test / itters))

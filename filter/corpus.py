@@ -3,7 +3,7 @@ from html import unescape
 from os import listdir
 from os.path import isfile, join
 from re import compile, findall, sub
-from utils import read_classification_from_file
+from filter.utils import read_classification_from_file
 
 class Corpus:
     def __init__(self, corpus_dir):

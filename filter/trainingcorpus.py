@@ -1,5 +1,5 @@
-from corpus import Corpus
-from utils import read_classification_from_file
+from filter.utils import read_classification_from_file
+from filter.corpus import Corpus
 from os.path import join
 
 class TrainingCorpus(Corpus):
